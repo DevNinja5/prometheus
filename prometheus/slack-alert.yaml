@@ -1,0 +1,49 @@
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+      slack_api_url: https://hooks.slack.com/services/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
+    receivers:
+    - name: 'slack_channel'
+      slack_configs:
+      - channel: "#channel_name"
+        send_resolved: true
+        icon_url: https://avatars3.githubusercontent.com/u/3380462
+        text: >-
+         {{ range .Alerts -}}
+         *Alert:* `{{ .Annotations.summary }}`
+    
+         *Description:* {{ .Annotations.description }}
+    
+         *Details:*
+           {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+           {{ end }}
+         {{ end }}
+        
+    templates:
+    - /etc/alertmanager/config/*.tmpl
+    
+    route:
+      receiver: "slack_channel"
+    
+    inhibit_rules:
+    - target_matchers:
+      - severity =~ warning|info
+      source_matchers:
+      - severity = critical
+      equal:
+      - namespace
+      - alertname
+    - target_matchers:
+      - severity = info
+      source_matchers:
+      - severity = warning
+      equal:
+      - namespace
+      - alertname
+    - target_matchers:
+      - severity = info
+      source_matchers:
+      - alertname = InfoInhibitor
+      equal:
+      - namespace
